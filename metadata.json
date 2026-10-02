@@ -1,0 +1,7 @@
+{
+  "name": "SaborChef - Recetas & Chef IA",
+  "description": "Plataforma de recetas de cocina internacional con catálogo completo de 316 recetas, buscador por ingredientes y despensa, categorías temáticas, planificador semanal y modo 100% offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

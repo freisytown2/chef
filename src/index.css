@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --app-font-scale: 1;
+}
+
+html[data-text-size="sm"] {
+  font-size: 14.5px;
+}
+
+html[data-text-size="base"] {
+  font-size: 16px;
+}
+
+html[data-text-size="lg"] {
+  font-size: 17.5px;
+}
+
+html[data-text-size="xl"] {
+  font-size: 19px;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50 antialiased selection:bg-orange-500 selection:text-white;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Safe area inset support for mobile WebViews */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
+}

@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "SaborChef - Recetas & Chef IA",
+  "short_name": "SaborChef",
+  "description": "Recetas de cocina con asistente de IA y modo sin conexión",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fffbeb",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
