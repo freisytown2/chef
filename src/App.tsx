@@ -8,7 +8,6 @@ import { FavoritesView } from './views/FavoritesView';
 import { MealPlannerView } from './views/MealPlannerView';
 import { SettingsView } from './views/SettingsView';
 import { RecipeDetailModal } from './components/RecipeDetailModal';
-import { CookingModeModal } from './components/CookingModeModal';
 import { PantrySearchModal } from './components/PantrySearchModal';
 import { CustomRecipeModal } from './components/CustomRecipeModal';
 
@@ -17,8 +16,6 @@ const AppContent: React.FC = () => {
     activeTab,
     selectedRecipe,
     setSelectedRecipe,
-    cookingRecipe,
-    setCookingRecipe,
     isPantryModalOpen,
     setIsPantryModalOpen,
     isCustomRecipeModalOpen,
@@ -66,13 +63,6 @@ const AppContent: React.FC = () => {
         <RecipeDetailModal
           recipe={selectedRecipe}
           onClose={() => setSelectedRecipe(null)}
-        />
-      )}
-
-      {cookingRecipe && (
-        <CookingModeModal
-          recipe={cookingRecipe}
-          onClose={() => setCookingRecipe(null)}
         />
       )}
 

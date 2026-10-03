@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Recipe } from '../types/recipe';
 import { useApp } from '../context/AppContext';
-import { Clock, Users, Heart, Sparkles, ChefHat } from 'lucide-react';
+import { getRecipeDishImage } from '../utils/recipeImages';
+import { Clock, Users, Heart, ChefHat } from 'lucide-react';
 
 interface RecipeCardProps {
   recipe: Recipe;
   showCategoryBadge?: boolean;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, showCategoryBadge = true }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   const { setSelectedRecipe, isFavorite, toggleFavorite } = useApp();
   const favorite = isFavorite(recipe.id);
+  const [imgError, setImgError] = useState(false);
 
   const difficultyColors = {
     'Fácil': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
@@ -19,35 +21,43 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, showCategoryBadg
   };
 
   const servings = recipe.servings || recipe.portions || 4;
+  const dishImageUrl = getRecipeDishImage(recipe);
 
   return (
     <div
       onClick={() => setSelectedRecipe(recipe)}
       className="group relative bg-white dark:bg-neutral-800 rounded-2xl overflow-hidden border border-neutral-100 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all active:scale-[0.98] cursor-pointer flex flex-col"
     >
-      {/* Visual Top Header Banner */}
-      <div
-        className="h-32 relative flex items-center justify-center overflow-hidden transition-colors"
-        style={{
-          background: recipe.color
-            ? `linear-gradient(135deg, ${recipe.color}22 0%, ${recipe.color}44 100%)`
-            : 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
-        }}
-      >
-        {/* Soft Background Circular Pattern */}
-        <div
-          className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full opacity-20 pointer-events-none"
-          style={{ backgroundColor: recipe.color || '#f97316' }}
-        />
+      {/* Visual Top Header Image Banner */}
+      <div className="h-40 relative overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+        {!imgError ? (
+          <img
+            src={dishImageUrl}
+            alt={recipe.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-5xl"
+            style={{
+              background: recipe.color
+                ? `linear-gradient(135deg, ${recipe.color}33 0%, ${recipe.color}66 100%)`
+                : 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
+            }}
+          >
+            {recipe.emoji || '🍲'}
+          </div>
+        )}
 
-        {/* Big Emoji / Dish Illustration */}
-        <div className="text-6xl drop-shadow-md transform group-hover:scale-110 transition-transform duration-300 select-none">
-          {recipe.emoji || '🍲'}
-        </div>
+        {/* Soft gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
         {/* Country Badge */}
         {recipe.country && (
-          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xs text-[11px] font-bold text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 shadow-xs flex items-center gap-1">
+          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md text-[11px] font-bold text-white shadow-xs">
             <span>{recipe.country}</span>
           </div>
         )}
@@ -59,14 +69,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, showCategoryBadg
             e.stopPropagation();
             toggleFavorite(recipe.id);
           }}
-          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xs transition-all ${
+          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${
             favorite
               ? 'bg-rose-500 text-white shadow-sm'
-              : 'bg-white/80 dark:bg-neutral-900/80 text-neutral-500 hover:text-rose-500 dark:text-neutral-300'
+              : 'bg-black/40 text-white hover:bg-black/60'
           }`}
           aria-label={favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
         >
-          <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
+          <Heart className={`w-4 h-4 ${favorite ? 'fill-current text-white' : ''}`} />
         </button>
 
         {/* Custom recipe badge */}

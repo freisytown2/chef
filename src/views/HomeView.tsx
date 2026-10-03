@@ -9,6 +9,7 @@ import {
   matchesQuery,
   normalizeText,
 } from '../data/recipes';
+import { getRecipeDishImage } from '../utils/recipeImages';
 import {
   Search,
   X,
@@ -204,9 +205,14 @@ export const HomeView: React.FC = () => {
                     }}
                     className="w-full px-3.5 py-2.5 text-left text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:bg-orange-50 dark:hover:bg-neutral-700 flex items-center justify-between transition-colors border-b last:border-b-0 border-neutral-100 dark:border-neutral-700/50"
                   >
-                    <span className="flex items-center gap-2">
-                      <span className="text-base">{s.emoji}</span>
-                      <span>{s.name}</span>
+                    <span className="flex items-center gap-2.5">
+                      <img
+                        src={getRecipeDishImage(s)}
+                        alt={s.name}
+                        referrerPolicy="no-referrer"
+                        className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                      />
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{s.name}</span>
                     </span>
                     <span className="text-[11px] text-neutral-400 font-normal">
                       {s.totalTime} min • {s.country}
@@ -419,9 +425,16 @@ export const HomeView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Big visual dish emoji */}
-                  <div className="text-7xl sm:text-8xl drop-shadow-md select-none transform group-hover:scale-110 transition-transform duration-300">
-                    {recipeOfTheDay.emoji || '🥘'}
+                  {/* Dish visual presentation photo */}
+                  <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden shadow-xl border-2 border-white/40 flex-shrink-0 bg-neutral-900 group-hover:scale-105 transition-transform duration-300">
+                    <img
+                      src={getRecipeDishImage(recipeOfTheDay)}
+                      alt={recipeOfTheDay.name}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
                   </div>
                 </div>
               </div>

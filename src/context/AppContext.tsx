@@ -27,8 +27,6 @@ interface AppContextType {
   setSelectedCategory: (catId: string | null) => void;
   selectedRecipe: Recipe | null;
   setSelectedRecipe: (recipe: Recipe | null) => void;
-  cookingRecipe: Recipe | null;
-  setCookingRecipe: (recipe: Recipe | null) => void;
   
   // Recipes
   allRecipes: Recipe[];
@@ -92,7 +90,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeTab, setActiveTab] = useState<ActiveTab>('inicio');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
 
   const [isPantryModalOpen, setIsPantryModalOpen] = useState(false);
   const [isCustomRecipeModalOpen, setIsCustomRecipeModalOpen] = useState(false);
@@ -386,8 +383,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedCategory,
         selectedRecipe,
         setSelectedRecipe,
-        cookingRecipe,
-        setCookingRecipe,
         allRecipes,
         catalogRecipes: CATALOG_RECIPES,
         customRecipes,
