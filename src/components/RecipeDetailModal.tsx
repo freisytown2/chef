@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Recipe } from '../types/recipe';
 import { useApp } from '../context/AppContext';
 import { scaleIngredient } from '../data/recipes';
-import { getRecipeDishImage } from '../utils/recipeImages';
 import {
   X,
   Users,
   ChefHat,
   Heart,
   Share2,
+  Play,
   AlertTriangle,
   Lightbulb,
   Repeat,
@@ -17,13 +17,6 @@ import {
   CheckSquare,
   Square,
   Trash2,
-  Clock,
-  Sparkles,
-  Camera,
-  Play,
-  Pause,
-  RotateCcw,
-  ZoomIn,
 } from 'lucide-react';
 
 interface RecipeDetailModalProps {
@@ -35,27 +28,17 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({ recipe, on
   const {
     isFavorite,
     toggleFavorite,
+    setCookingRecipe,
     deleteCustomRecipe,
   } = useApp();
 
   const originalServings = recipe.servings || recipe.portions || 4;
   const [servings, setServings] = useState<number>(originalServings);
   const [checkedIngredients, setCheckedIngredients] = useState<Record<string, boolean>>({});
-  const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
   const [copiedToast, setCopiedToast] = useState(false);
-  const [isImageZoomed, setIsImageZoomed] = useState(false);
-
-  // In-step timer state
-  const [activeTimerStep, setActiveTimerStep] = useState<number | null>(null);
-  const [timerSecondsLeft, setTimerSecondsLeft] = useState<number>(0);
-  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const favorite = isFavorite(recipe.id);
-  const dishImageUrl = getRecipeDishImage(recipe);
-  const stepsList = recipe.steps || [];
 
-  // Toggle ingredient checklist
   const handleToggleIngredient = (id: string) => {
     setCheckedIngredients(prev => ({
       ...prev,
@@ -63,72 +46,8 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({ recipe, on
     }));
   };
 
-  // Toggle step completion
-  const handleToggleStep = (idx: number) => {
-    setCompletedSteps(prev => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }));
-  };
-
-  // Timer logic for steps
-  const startStepTimer = (stepIdx: number, durationMinutes: number) => {
-    if (activeTimerStep === stepIdx && isTimerRunning) {
-      setIsTimerRunning(false);
-      return;
-    }
-    if (activeTimerStep === stepIdx && !isTimerRunning && timerSecondsLeft > 0) {
-      setIsTimerRunning(true);
-      return;
-    }
-
-    setActiveTimerStep(stepIdx);
-    setTimerSecondsLeft(durationMinutes * 60);
-    setIsTimerRunning(true);
-  };
-
-  const resetStepTimer = () => {
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    setIsTimerRunning(false);
-    setTimerSecondsLeft(0);
-    setActiveTimerStep(null);
-  };
-
-  useEffect(() => {
-    if (isTimerRunning && timerSecondsLeft > 0) {
-      timerIntervalRef.current = setInterval(() => {
-        setTimerSecondsLeft(prev => {
-          if (prev <= 1) {
-            setIsTimerRunning(false);
-            if (activeTimerStep !== null) {
-              setCompletedSteps(cs => ({ ...cs, [activeTimerStep]: true }));
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    }
-
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
-  }, [isTimerRunning, timerSecondsLeft, activeTimerStep]);
-
-  const formatTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const totalStepsCount = stepsList.length;
-  const completedStepsCount = Object.values(completedSteps).filter(Boolean).length;
-  const stepsProgressPercent = totalStepsCount > 0 ? Math.round((completedStepsCount / totalStepsCount) * 100) : 0;
-
   const handleShare = async () => {
-    const stepsText = stepsList.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
+    const stepsText = (recipe.steps || []).map((s, idx) => `${idx + 1}. ${s}`).join('\n');
     const ingsText = recipe.ingredients
       .map(i => {
         const scaled = scaleIngredient(i, originalServings, servings);
@@ -144,10 +63,10 @@ ${recipe.description}
 📋 INGREDIENTES:
 ${ingsText}
 
-👩‍🍳 PREPARACIÓN PASO A PASO:
+👩‍🍳 PREPARACIÓN:
 ${stepsText}
 
-💡 Descubre más recetas en SaborChef!`;
+💡 Descubre más en SaborChef!`;
 
     if (navigator.share) {
       try {
@@ -171,24 +90,21 @@ ${stepsText}
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-xs flex justify-center p-2 sm:p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden my-auto border border-neutral-200 dark:border-neutral-800 flex flex-col max-h-[94vh]">
-        {/* Modal Header Banner with Dish Image */}
-        <div className="relative h-52 sm:h-64 overflow-hidden bg-neutral-900">
-          <img
-            src={dishImageUrl}
-            alt={recipe.name}
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-          />
-
-          {/* Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/50 pointer-events-none" />
-
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl overflow-hidden my-auto border border-neutral-200 dark:border-neutral-800 flex flex-col max-h-[92vh]">
+        {/* Modal Header Banner */}
+        <div
+          className="relative h-44 sm:h-52 flex items-center justify-center p-4 transition-colors"
+          style={{
+            background: recipe.color
+              ? `linear-gradient(135deg, ${recipe.color}33 0%, ${recipe.color}66 100%)`
+              : 'linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)',
+          }}
+        >
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-3 left-3 w-10 h-10 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-md text-white flex items-center justify-center shadow-lg transition-all active:scale-95 z-10"
+            className="absolute top-3 left-3 w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-200 flex items-center justify-center shadow-md hover:bg-white transition-all active:scale-95 z-10"
             aria-label="Cerrar receta"
           >
             <X className="w-5 h-5" />
@@ -198,17 +114,17 @@ ${stepsText}
           <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
             <button
               onClick={handleShare}
-              className="w-10 h-10 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-md text-white flex items-center justify-center shadow-lg transition-all active:scale-95"
+              className="w-10 h-10 rounded-full bg-white/90 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-200 flex items-center justify-center shadow-md hover:bg-white transition-all active:scale-95"
               title="Compartir o copiar texto de la receta"
             >
               <Share2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => toggleFavorite(recipe.id)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md shadow-lg transition-all active:scale-95 ${
+              className={`w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all active:scale-95 ${
                 favorite
                   ? 'bg-rose-500 text-white'
-                  : 'bg-black/50 hover:bg-black/75 text-white'
+                  : 'bg-white/90 dark:bg-neutral-800/90 text-neutral-700 dark:text-neutral-200'
               }`}
               title={favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
             >
@@ -216,37 +132,38 @@ ${stepsText}
             </button>
           </div>
 
-          {/* Title & Badges inside header banner */}
-          <div className="absolute bottom-3 left-4 right-4 z-10 space-y-1.5 text-white">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-600 text-white shadow-xs">
-                {recipe.difficulty}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
-                {recipe.country || 'Internacional'}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-amber-300 border border-white/20 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{recipe.totalTime} min</span>
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black leading-tight drop-shadow-md">
-              {recipe.name}
-            </h1>
+          {/* Big Illustration Emoji */}
+          <div className="text-7xl sm:text-8xl drop-shadow-lg select-none">
+            {recipe.emoji || '🍲'}
+          </div>
+
+          {/* Bottom badge overlay */}
+          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs font-bold">
+            <span className="px-3 py-1 rounded-full bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xs text-neutral-800 dark:text-neutral-200 shadow-xs border border-neutral-200 dark:border-neutral-700">
+              {recipe.country || 'Internacional'}
+            </span>
+            <span className="px-3 py-1 rounded-full bg-orange-600 text-white shadow-xs">
+              {recipe.difficulty}
+            </span>
           </div>
         </div>
 
         {/* Scrollable Content Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 text-neutral-800 dark:text-neutral-100">
-          {/* Description */}
-          <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
-            {recipe.description}
-          </p>
+          {/* Title & Description */}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white leading-tight">
+              {recipe.name}
+            </h1>
+            <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-2 leading-relaxed">
+              {recipe.description}
+            </p>
+          </div>
 
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-3 gap-2.5 p-3 rounded-2xl bg-orange-50/70 dark:bg-neutral-800/80 border border-orange-100 dark:border-neutral-700 text-center">
             <div className="flex flex-col items-center justify-center">
-              <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">Preparación</span>
+              <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">Prep</span>
               <span className="font-extrabold text-sm text-neutral-800 dark:text-neutral-100">
                 {recipe.prepTime} min
               </span>
@@ -258,77 +175,25 @@ ${stepsText}
               </span>
             </div>
             <div className="flex flex-col items-center justify-center">
-              <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">Tiempo Total</span>
+              <span className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">Total</span>
               <span className="font-extrabold text-sm text-orange-600 dark:text-orange-400">
                 {recipe.totalTime} min
               </span>
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* FOTO DEL PLATO TERMINADO: "ASÍ TE VA A QUEDAR" (Reemplaza Modo Cocina)    */}
-          {/* ========================================================================= */}
-          <div className="rounded-3xl overflow-hidden border border-orange-200 dark:border-neutral-700 bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white dark:from-neutral-800 dark:to-neutral-900 shadow-sm p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-xl bg-orange-500 text-white shadow-xs">
-                  <Camera className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-black text-sm sm:text-base text-neutral-900 dark:text-white leading-tight">
-                    Resultado Final: Así te va a quedar
-                  </h3>
-                  <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Foto de presentación y emplatado del plato terminado
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsImageZoomed(true)}
-                className="flex items-center gap-1 text-[11px] font-bold text-orange-600 dark:text-orange-400 hover:underline bg-white/80 dark:bg-neutral-800 px-2.5 py-1 rounded-lg border border-orange-100 dark:border-neutral-700"
-                title="Ampliar foto del plato"
-              >
-                <ZoomIn className="w-3.5 h-3.5" />
-                <span>Ampliar</span>
-              </button>
-            </div>
-
-            {/* Showcase Image */}
-            <div
-              onClick={() => setIsImageZoomed(true)}
-              className="relative rounded-2xl overflow-hidden shadow-md cursor-pointer group bg-neutral-900 h-60 sm:h-72"
+          {/* Action CTA: Start Cooking Mode */}
+          <div>
+            <button
+              onClick={() => {
+                setCookingRecipe(recipe);
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm sm:text-base shadow-md transition-all active:scale-95"
             >
-              <img
-                src={dishImageUrl}
-                alt={`Presentación final de ${recipe.name}`}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/10 pointer-events-none" />
-
-              <div className="absolute bottom-3 left-3 right-3 text-white pointer-events-none">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600/90 text-[10px] font-extrabold uppercase tracking-wide mb-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Emplatado final de autor</span>
-                </div>
-                <p className="text-xs sm:text-sm font-bold text-white drop-shadow-xs">
-                  {recipe.name} listo para servir a la mesa
-                </p>
-                <p className="text-[11px] text-neutral-200 mt-0.5 line-clamp-1">
-                  Sigue los pasos detallados a continuación para lograr este mismo dorado, aroma y textura.
-                </p>
-              </div>
-            </div>
-
-            {/* Serving Tip Banner */}
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200">
-              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                <strong>Consejo de emplatado:</strong> Para que te quede idéntico a la foto, sirve en plato amplio caliente, acompaña con una ramita de hierba fresca y deja reposar 2 minutos antes de cortar o servir.
-              </p>
-            </div>
+              <Play className="w-5 h-5 fill-current" />
+              <span>Iniciar Modo Cocina Interactivo</span>
+            </button>
           </div>
 
           {/* Portions & Ingredients Section */}
@@ -401,137 +266,34 @@ ${stepsText}
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* PREPARACIÓN PASO A PASO INTERACTIVA (Sigue los pasos de la receta)        */}
-          {/* ========================================================================= */}
-          <div className="space-y-3 pt-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                <h2 className="font-extrabold text-base sm:text-lg">
-                  Sigue los pasos de la receta
-                </h2>
-              </div>
-
-              {/* Progress & Reset */}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="font-bold text-neutral-600 dark:text-neutral-300">
-                  {completedStepsCount} de {totalStepsCount} completados ({stepsProgressPercent}%)
-                </span>
-                {completedStepsCount > 0 && (
-                  <button
-                    onClick={() => setCompletedSteps({})}
-                    className="text-[11px] font-bold text-neutral-400 hover:text-orange-600 transition-colors"
-                  >
-                    Reiniciar
-                  </button>
-                )}
-              </div>
+          {/* Preparation Steps Section */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2">
+              <ChefHat className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              <h2 className="font-extrabold text-base sm:text-lg">Preparación paso a paso</h2>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-orange-500 to-emerald-500 transition-all duration-300 rounded-full"
-                style={{ width: `${stepsProgressPercent}%` }}
-              />
-            </div>
-
-            {/* Steps List */}
-            <div className="space-y-3 pt-1">
-              {stepsList.map((step, idx) => {
+            <div className="space-y-3">
+              {(recipe.steps || []).map((step, idx) => {
                 const stepDuration = recipe.stepTimes?.[idx];
-                const isStepCompleted = Boolean(completedSteps[idx]);
-                const isTimerActiveForThisStep = activeTimerStep === idx;
-
                 return (
                   <div
                     key={idx}
-                    onClick={() => handleToggleStep(idx)}
-                    className={`group relative flex flex-col gap-2.5 p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer select-none ${
-                      isStepCompleted
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/60 shadow-2xs'
-                        : 'bg-white dark:bg-neutral-800 border-neutral-200/90 dark:border-neutral-700 hover:border-orange-300 dark:hover:border-neutral-600 shadow-2xs'
-                    }`}
+                    className="flex gap-3.5 p-3 rounded-2xl bg-white dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700 shadow-2xs"
                   >
-                    <div className="flex items-start gap-3.5">
-                      {/* Step Number or Check Circle */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleStep(idx);
-                        }}
-                        className={`flex-shrink-0 w-8 h-8 rounded-full font-black text-xs flex items-center justify-center transition-all ${
-                          isStepCompleted
-                            ? 'bg-emerald-600 text-white shadow-xs'
-                            : 'bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 group-hover:bg-orange-200'
-                        }`}
-                      >
-                        {isStepCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : idx + 1}
-                      </button>
-
-                      {/* Step Instruction */}
-                      <div className="flex-1">
-                        <p
-                          className={`text-sm leading-relaxed transition-colors ${
-                            isStepCompleted
-                              ? 'line-through text-neutral-400 dark:text-neutral-500 font-medium'
-                              : 'text-neutral-900 dark:text-neutral-100 font-medium'
-                          }`}
-                        >
-                          {step}
-                        </p>
-                      </div>
+                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-extrabold text-xs flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">
+                        {step}
+                      </p>
+                      {stepDuration && stepDuration > 0 && (
+                        <span className="inline-block mt-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+                          ⏱️ Duración orientativa: {stepDuration} min
+                        </span>
+                      )}
                     </div>
-
-                    {/* Step Duration & In-Step Active Timer */}
-                    {stepDuration && stepDuration > 0 && (
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="mt-1 pt-2 border-t border-neutral-100 dark:border-neutral-700/60 flex flex-wrap items-center justify-between gap-2"
-                      >
-                        <div className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400 font-bold">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Tiempo estimado: {stepDuration} min</span>
-                        </div>
-
-                        {/* Timer control */}
-                        <div className="flex items-center gap-2">
-                          {isTimerActiveForThisStep ? (
-                            <div className="flex items-center gap-2 bg-neutral-900 text-white px-3 py-1.5 rounded-xl shadow-xs text-xs font-mono">
-                              <span className={`font-black ${timerSecondsLeft === 0 ? 'text-emerald-400 animate-pulse' : 'text-amber-400'}`}>
-                                {timerSecondsLeft === 0 ? '¡Listo!' : formatTimer(timerSecondsLeft)}
-                              </span>
-                              {timerSecondsLeft > 0 && (
-                                <button
-                                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                                  className="p-1 hover:text-orange-400"
-                                  title={isTimerRunning ? 'Pausar' : 'Reanudar'}
-                                >
-                                  {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                                </button>
-                              )}
-                              <button
-                                onClick={resetStepTimer}
-                                className="p-1 hover:text-rose-400"
-                                title="Reiniciar temporizador"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => startStepTimer(idx, stepDuration)}
-                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 hover:bg-orange-200 text-xs font-bold transition-colors"
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                              <span>Iniciar temporizador ({stepDuration} min)</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -651,34 +413,6 @@ ${stepsText}
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-bold px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4 text-emerald-400" />
             <span>¡Receta copiada al portapapeles!</span>
-          </div>
-        )}
-
-        {/* Zoom Lightbox Modal */}
-        {isImageZoomed && (
-          <div
-            onClick={() => setIsImageZoomed(false)}
-            className="fixed inset-0 z-60 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in"
-          >
-            <button
-              onClick={() => setIsImageZoomed(false)}
-              className="absolute top-4 right-4 p-2.5 rounded-full bg-white/20 text-white hover:bg-white/40 transition-colors z-10"
-              aria-label="Cerrar vista ampliada"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <div className="max-w-4xl max-h-[85vh] overflow-hidden rounded-3xl shadow-2xl relative">
-              <img
-                src={dishImageUrl}
-                alt={recipe.name}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-contain max-h-[85vh]"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white text-center">
-                <p className="font-extrabold text-base">{recipe.name}</p>
-                <p className="text-xs text-neutral-300">Presentación y acabado final del plato</p>
-              </div>
-            </div>
           </div>
         )}
       </div>
